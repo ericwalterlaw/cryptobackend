@@ -80,10 +80,10 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
       type: 'deposit',       // could also be 'buy'
       symbol: 'USDT',
       name: 'Tether',
-      amount: 1000,          // sample amount
+      amount: 1,          // sample amount
       price: 1,              // fixed since it's USDT
       fee: 0,
-      total: 1000,
+      total: 1,
       status: 'completed',
       notes: 'Welcome bonus - sample transaction'
     });
