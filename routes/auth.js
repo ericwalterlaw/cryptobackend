@@ -37,6 +37,8 @@ const generateToken = (userId) => {
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
+import Transaction from '../models/Transaction.js'; // import your Transaction model
+
 router.post('/register', authLimiter, validateRegister, async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -72,6 +74,20 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
       holdings: []
     });
 
+    // 👉 Create a sample transaction for the new user
+    await Transaction.create({
+      userId: user._id,
+      type: 'deposit',       // could also be 'buy'
+      symbol: 'USDT',
+      name: 'Tether',
+      amount: 1000,          // sample amount
+      price: 1,              // fixed since it's USDT
+      fee: 0,
+      total: 1000,
+      status: 'completed',
+      notes: 'Welcome bonus - sample transaction'
+    });
+
     // Generate token
     const token = generateToken(user._id);
 
@@ -97,6 +113,7 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
     });
   }
 });
+
 
 // @route   POST /api/auth/login
 // @desc    Login user
