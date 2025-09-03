@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
@@ -29,12 +28,14 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// CORS configuration
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://sunny-beijinho-58fda2.netlify.app/',
+  origin: "https://sunny-beijinho-58fda2.netlify.app/", // your Netlify URL
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
