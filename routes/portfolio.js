@@ -3,54 +3,106 @@ import { body, validationResult } from 'express-validator';
 import auth from '../middleware/auth.js';
 import Portfolio from '../models/Portfolio.js';
 import Transaction from '../models/Transaction.js';
+import axios from 'axios';
+
 
 const router = express.Router();
 
-// Mock crypto price data (in a real app, you'd fetch from CoinGecko or similar)
-const mockPrices = {
-  'BTC': { price: 43250.00, change: 2.5 },
-  'ETH': { price: 2650.00, change: -1.2 },
-  'BNB': { price: 315.50, change: 3.8 },
-  'SOL': { price: 98.75, change: 7.2 },
-  'ADA': { price: 0.52, change: -0.8 },
-  'DOT': { price: 7.45, change: 4.1 }
-};
+// Fetch top coins prices
+async function fetchCryptoPrices(symbols = ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'DOT']) {
+  try {
+    const idsMap = {
+      BTC: 'bitcoin',
+      ETH: 'ethereum',
+      BNB: 'binancecoin',
+      SOL: 'solana',
+      ADA: 'cardano',
+      DOT: 'polkadot'
+    };
+
+    const ids = symbols.map(s => idsMap[s]).join(',');
+
+    const { data } = await axios.get(
+      `https://api.coingecko.com/api/v3/simple/price`,
+      {
+        params: {
+          ids,
+          vs_currencies: 'usd',
+          include_24hr_change: 'true'
+        }
+      }
+    );
+
+    // Format like your mockPrices
+    const prices = {};
+    symbols.forEach(symbol => {
+      const id = idsMap[symbol];
+      prices[symbol] = {
+        price: data[id].usd,
+        change: data[id].usd_24h_change
+      };
+    });
+
+    return prices;
+  } catch (err) {
+    console.error('Error fetching live prices:', err.message);
+    return {};
+  }
+}
+
+
+
 
 // @route   GET /api/portfolio
-// @desc    Get user's portfolio
+// @desc    Get user's portfolio with live prices
 // @access  Private
 router.get('/', auth, async (req, res) => {
   try {
     let portfolio = await Portfolio.findOne({ userId: req.user.id });
 
     if (!portfolio) {
-      // Create empty portfolio if it doesn't exist
       portfolio = await Portfolio.create({
         userId: req.user.id,
         holdings: []
       });
     }
 
-    // Update current prices
-    portfolio.updateCurrentPrices(mockPrices);
+    const symbols = portfolio.holdings.map((h) => h.symbol);
+    const livePrices = await fetchCryptoPrices(symbols);
+
+    // Update current prices in holdings
+    portfolio.holdings.forEach((holding) => {
+      const priceData = livePrices[holding.symbol];
+      if (priceData) {
+        holding.currentPrice = priceData.price;
+        holding.change = priceData.change;
+      } else {
+        // fallback to average price if API didn’t return data
+        holding.currentPrice = holding.averagePrice;
+        holding.change = 0;
+      }
+    });
+
     await portfolio.save();
 
-    // Format response data
+    // Build portfolio response
     const portfolioData = {
       totalValue: portfolio.totalValue,
       totalInvested: portfolio.totalInvested,
       totalGain: portfolio.totalGainLoss,
       gainPercentage: portfolio.totalGainLossPercentage,
-      assets: portfolio.holdings.map(holding => ({
+      assets: portfolio.holdings.map((holding) => ({
         symbol: holding.symbol,
         name: holding.name,
         amount: holding.amount,
         avgPrice: holding.averagePrice,
-        currentPrice: holding.currentPrice || holding.averagePrice,
-        value: holding.amount * (holding.currentPrice || holding.averagePrice),
-        change: mockPrices[holding.symbol]?.change || 0,
-        allocation: portfolio.totalValue > 0 ? 
-          ((holding.amount * (holding.currentPrice || holding.averagePrice)) / portfolio.totalValue) * 100 : 0
+        currentPrice: holding.currentPrice,
+        value: holding.amount * holding.currentPrice,
+        change: holding.change,
+        allocation:
+          portfolio.totalValue > 0
+            ? (holding.amount * holding.currentPrice / portfolio.totalValue) * 100
+            : 0
       }))
     };
 
@@ -66,6 +118,7 @@ router.get('/', auth, async (req, res) => {
     });
   }
 });
+
 
 // @route   POST /api/portfolio/trade
 // @desc    Execute a trade (buy/sell)
