@@ -32,7 +32,8 @@ app.use('/api/', limiter);
 // CORS configuration
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'https://sunny-beijinho-58fda2.netlify.app/',
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Body parsing middleware
