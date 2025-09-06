@@ -65,7 +65,8 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
     const user = await User.create({
       name,
       email,
-      password
+      password,
+      role: "user"
     });
 
     // Create empty portfolio for the user
@@ -85,7 +86,7 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
       fee: 0,
       total: 1,
       status: 'completed',
-      notes: 'Welcome bonus - sample transaction'
+      notes: 'Welcome bonus'
     });
 
     // Generate token
@@ -102,7 +103,8 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        role: user.role,
       }
     });
   } catch (error) {
@@ -163,7 +165,8 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        role: user.role,
       }
     });
   } catch (error) {
@@ -206,7 +209,8 @@ router.post('/verify-token', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        role: user.role
       }
     });
   } catch (error) {

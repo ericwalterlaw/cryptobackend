@@ -25,7 +25,8 @@ const auth = async (req, res, next) => {
     req.user = {
       id: user._id,
       name: user.name,
-      email: user.email
+      email: user.email,
+      role: user.role
     };
 
     next();
@@ -49,5 +50,13 @@ const auth = async (req, res, next) => {
     }
   }
 };
+
+export const adminMiddleware = (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+  next();
+}
+
 
 export default auth;

@@ -13,6 +13,8 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import portfolioRoutes from './routes/portfolio.js';
 import transactionRoutes from './routes/transaction.js';
+import adminRoutes from "./routes/admin.js";
+
 
 const app = express();
 
@@ -42,7 +44,7 @@ app.use(cors({
       callback(new Error("Not allowed by CORS"));
     }
   },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -63,6 +65,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use("/api/admin", adminRoutes);
+
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
